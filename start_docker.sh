@@ -21,6 +21,12 @@
 #                "GPG_KEYS=A0D6EEA1DCAE49A635A3B2F0779B22DFB3E717B7",
 #                "LWS_VERSION=2.4.2"
 #            ],
+#
+#
+#
+# InfluxDB
+# https://hub.docker.com/_/influxdb
+
 
 
 
@@ -38,4 +44,11 @@ if [[ $? != 0 ]]; then
     docker restart nodered
     
 fi
+
+docker run -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v /home/pi/docker/influx:/var/lib/influxdb --name=influxdb influxdb
+
+
+
+docker run -v /home/pi/docker/grafana/config:/etc/grafana -v /home/pi/docker/grafana/data:/var/lib/grafana -v /home/pi/docker/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
+
 
