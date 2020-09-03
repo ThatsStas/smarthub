@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DOCKER_PATH=$(pwd)
+
 # NodeRed
 #"Env": [
 #                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -31,24 +33,24 @@
 
 
 
-docker run -d -it -p 1883:1883 -p 9001:9001 -v /home/pi/docker/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto
+docker run -d -it -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto
 
 if [[ $? != 0 ]]; then
     docker restart mqtt
     
 fi
 
-docker run -d -it --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v /home/pi/docker/nodered:/data --name nodered nodered/node-red
+docker run -d -it --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
 
 if [[ $? != 0 ]]; then
     docker restart nodered
     
 fi
 
-docker run -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v /home/pi/docker/influx:/var/lib/influxdb --name=influxdb influxdb
+docker run -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
 
 
 
-docker run -v /home/pi/docker/grafana/config:/etc/grafana -v /home/pi/docker/grafana/data:/var/lib/grafana -v /home/pi/docker/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
+docker run -v $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
 
 
