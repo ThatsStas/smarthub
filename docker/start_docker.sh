@@ -33,24 +33,31 @@ DOCKER_PATH=$(pwd)
 
 
 
-docker run -d -it -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto
+
+docker run -d -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto
 
 if [[ $? != 0 ]]; then
     docker restart mqtt
     
 fi
 
-docker run -d -it --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
+FOLDER_OWNER=$(stat -c '%u' $DOCKER_PATH/nodered)
+EFFECTIVE_UID=$(id -u)
+EFFECTIVE_GUID=$(id -g)
+
+
+[[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
+docker run -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
 
 if [[ $? != 0 ]]; then
     docker restart nodered
     
 fi
 
-docker run -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
+docker run -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
 
 
 
-docker run -v $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
+docker run -v -d $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
 
 
