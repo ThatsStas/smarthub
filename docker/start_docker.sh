@@ -46,11 +46,12 @@ setup_mqtt() {
 
     read -p "Press CTL+c to abort or ENTER to continue installation"
 
-    [[ ! -d $DOCKER_PATH/mqtt ]] && mkdir -p $DOCKER_PATH/mqtt
+    [[ ! -d $DOCKER_PATH/mqtt ]] && { echo "EE: No MQTT config path available at $DOCKER_PATH/mqtt. Exiting..."; exit 1; }
 
     sudo echo $mqtt_username:$mqtt_password >> $DOCKER_PATH/mqtt/passwd
 
     docker run -d --rm -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6 /bin/sh -c "/usr/bin/mosquitto_passwd -U /mosquitto/passwd"
+    sleep 10
 }
 
 
