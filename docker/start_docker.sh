@@ -33,31 +33,53 @@ DOCKER_PATH=$(pwd)
 
 
 
+setup_mqtt() {
+    [[ -f $DOCKER_PATH/mqtt/passwd ]] && return;
+    
+    [[ $EUID != 0 ]] && { echo "EE: Please run this script a sudo"; exit 1; }
 
-docker run -d -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto
+    local mqtt_username 
+    local mqtt_password 
+    echo "Setup mosquitto mqtt broker"
+    read -p "Username: " mqtt_username 
+    read -sp "Password: " mqtt_password
+
+    read -p "Press CTL+c to abort or ENTER to continue installation"
+
+    [[ ! -d $DOCKER_PATH/mqtt ]] && mkdir -p $DOCKER_PATH/mqtt
+
+    sudo echo $mqtt_username:$mqtt_password >> $DOCKER_PATH/mqtt/passwd
+
+    docker run -d --rm -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6 /bin/sh -c "/usr/bin/mosquitto_passwd -U /mosquitto/passwd"
+}
+
+
+setup_mqtt
+docker run -d -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6
 
 if [[ $? != 0 ]]; then
     docker restart mqtt
     
 fi
-
-FOLDER_OWNER=$(stat -c '%u' $DOCKER_PATH/nodered)
-EFFECTIVE_UID=$(id -u)
-EFFECTIVE_GUID=$(id -g)
-
-
-[[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
-docker run -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
-
-if [[ $? != 0 ]]; then
-    docker restart nodered
-    
-fi
-
-docker run -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
-
-
-
-docker run -v -d $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
-
-
+#
+#[[ ! -d $DOCKER_PATH/nodered ]] && mkdir -p $DOCKER_PATH/nodered
+#
+#FOLDER_OWNER=$(stat -c '%u' $DOCKER_PATH/nodered)
+#EFFECTIVE_UID=$(id -u)
+#EFFECTIVE_GUID=$(id -g)
+#
+#[[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
+#docker run -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
+#
+#if [[ $? != 0 ]]; then
+#    docker restart nodered
+#    
+#fi
+#
+#docker run -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
+#
+#
+#
+#docker run -v -d $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
+#
+#
