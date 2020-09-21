@@ -33,54 +33,60 @@ DOCKER_PATH=$(pwd)
 
 
 
-setup_mqtt() {
-    [[ -f $DOCKER_PATH/mqtt/passwd ]] && return;
-    
-    [[ $EUID != 0 ]] && { echo "EE: Please run this script a sudo"; exit 1; }
-
-    local mqtt_username 
-    local mqtt_password 
-    echo "Setup mosquitto mqtt broker"
-    read -p "Username: " mqtt_username 
-    read -sp "Password: " mqtt_password
-
-    read -p "Press CTL+c to abort or ENTER to continue installation"
-
-    [[ ! -d $DOCKER_PATH/mqtt ]] && { echo "EE: No MQTT config path available at $DOCKER_PATH/mqtt. Exiting..."; exit 1; }
-
-    sudo echo $mqtt_username:$mqtt_password >> $DOCKER_PATH/mqtt/passwd
-
-    docker run -d --rm -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6 /bin/sh -c "/usr/bin/mosquitto_passwd -U /mosquitto/passwd"
-    sleep 10
-}
-
-
-setup_mqtt
-docker run -d -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6
-
-if [[ $? != 0 ]]; then
-    docker restart mqtt
-    
-fi
+#setup_mqtt() {
+#    [[ -f $DOCKER_PATH/mqtt/passwd ]] && return;
+#    
+#    [[ $EUID != 0 ]] && { echo "EE: Please run this script a sudo"; exit 1; }
 #
-#[[ ! -d $DOCKER_PATH/nodered ]] && mkdir -p $DOCKER_PATH/nodered
+#    local mqtt_username 
+#    local mqtt_password 
+#    echo "Setup mosquitto mqtt broker"
+#    read -p "Username: " mqtt_username 
+#    read -sp "Password: " mqtt_password
 #
-#FOLDER_OWNER=$(stat -c '%u' $DOCKER_PATH/nodered)
-#EFFECTIVE_UID=$(id -u)
-#EFFECTIVE_GUID=$(id -g)
+#    read -p "Press CTL+c to abort or ENTER to continue installation"
 #
-#[[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
-#docker run -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red
+#    [[ ! -d $DOCKER_PATH/mqtt ]] && { echo "EE: No MQTT config path available at $DOCKER_PATH/mqtt. Exiting..."; exit 1; }
+#
+#    sudo echo $mqtt_username:$mqtt_password >> $DOCKER_PATH/mqtt/passwd
+#
+#    docker run -d --rm -p 1884:1883 -p 9002:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6 /bin/sh -c "/usr/bin/mosquitto_passwd -U /mosquitto/passwd"
+#    sleep 10
+#}
+#
+#
+#setup_mqtt
+##docker run -d --restart unless-stopped -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6
 #
 #if [[ $? != 0 ]]; then
-#    docker restart nodered
+#    docker restart mqtt
 #    
 #fi
 #
-#docker run -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb
-#
-#
-#
-#docker run -v -d $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -p 3000:3000 --name=grafana -u 1000 grafana/grafana
-#
-#
+
+
+[[ $# > 0 ]] && { [[ $1 == "stop" ]] && echo "Stopping all containers"; docker stop grafana nodered influxdb; docker rm grafana nodered influxdb; exit 1; }
+
+
+[[ ! -d $DOCKER_PATH/nodered ]] && mkdir -p $DOCKER_PATH/nodered
+
+FOLDER_OWNER=$(stat -c '%u' $DOCKER_PATH/nodered)
+EFFECTIVE_UID=$(id -u)
+EFFECTIVE_GUID=$(id -g)
+
+[[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
+docker run --restart unless-stopped -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red:1.1.3
+
+if [[ $? != 0 ]]; then
+    docker restart nodered
+    
+fi
+
+docker run --restart unless-stopped -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_ADMIN_USER=admin -e INFLUXDB_ADMIN_PASSWORD=mypassword -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb:1.8.2
+
+[[ ! -f $DOCKER_PATH/grafana/grafana.ini ]] && touch $DOCKER_PATH/grafana/grafana.ini
+
+
+# TODO: Remove password from environment list.
+docker run --restart unless-stopped -d -v $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -v $DOCKER_PATH/grafana/grafana.ini:/etc/grafana/grafana.ini -p 3000:3000 --name=grafana -u 104 grafana/grafana:7.1.5
+
