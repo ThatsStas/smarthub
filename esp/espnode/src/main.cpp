@@ -8,9 +8,8 @@
 
 #include <ESP8266WiFi.h>
 
+#include "credentials.h"
 
-char ssid[] = "";        // your network SSID (name)
-char pass[] =  "";    // your network password (use for WPA, or use as key for WEP)
 
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
@@ -60,7 +59,7 @@ void setup() {
   }
 
 
-  mqttClient.setUsernamePassword("", "");
+  mqttClient.setUsernamePassword(MQTTUSER, MQTTPASS);
   if (!mqttClient.connect(broker, port)) {
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
