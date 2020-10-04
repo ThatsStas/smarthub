@@ -1,6 +1,7 @@
 **/passwd
 **/credentials.h
 
+*/node_modules/
 
 # Created by https://www.toptal.com/developers/gitignore/api/platformio,visualstudiocode,c++,c
 # Edit at https://www.toptal.com/developers/gitignore?templates=platformio,visualstudiocode,c++,c
