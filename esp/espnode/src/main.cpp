@@ -11,8 +11,11 @@
 #include <ESP8266WiFi.h>
 
 #include "credentials.h"
+#include "website.h"
 
 AsyncWebServer server(80);
+AsyncWebServer s_server(443);
+
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
@@ -28,26 +31,29 @@ int count = 0;
 DHT dht(5, DHT22);
 
 void notFound(AsyncWebServerRequest *request) {
-    request->send(404, "text/plain", "Not found");
+    request->send(404, "text/html", "Not found");
 }
 
 void sendInfo(AsyncWebServerRequest *request) {
-
-    request->send(200, "text/plain", topic);
+    request->send(200, "text/html", website.c_str());
 
 }
 
 void configureClient(AsyncWebServerRequest *request) {
-
+  // request.
 }
 
 void setupWebServer() {
   server.on("/", HTTP_GET, sendInfo);
   server.on("/", HTTP_POST, configureClient);
+  s_server.on("/", HTTP_GET, sendInfo);
+  s_server.on("/", HTTP_POST, configureClient);
 
   server.onNotFound(notFound);
+  s_server.onNotFound(notFound);
 
   server.begin();
+  s_server.begin();
 }
 
 void setup() {
