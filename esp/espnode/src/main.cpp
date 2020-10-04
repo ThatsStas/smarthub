@@ -6,11 +6,13 @@
 
 #include <ArduinoMqttClient.h>
 
+#include <ESPAsyncWebServer.h>
+
 #include <ESP8266WiFi.h>
 
 #include "credentials.h"
 
-
+AsyncWebServer server(80);
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
@@ -24,6 +26,29 @@ unsigned long previousMillis = 0;
 int count = 0;
 
 DHT dht(5, DHT22);
+
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+}
+
+void sendInfo(AsyncWebServerRequest *request) {
+
+    request->send(200, "text/plain", topic);
+
+}
+
+void configureClient(AsyncWebServerRequest *request) {
+
+}
+
+void setupWebServer() {
+  server.on("/", HTTP_GET, sendInfo);
+  server.on("/", HTTP_POST, configureClient);
+
+  server.onNotFound(notFound);
+
+  server.begin();
+}
 
 void setup() {
   dht.begin();
@@ -58,6 +83,10 @@ void setup() {
     delay(1000);
   }
 
+  Serial.print("Connected. IP [");
+  Serial.print(WiFi.localIP());
+  Serial.println("]");
+  
 
   mqttClient.setUsernamePassword(MQTTUSER, MQTTPASS);
   if (!mqttClient.connect(broker, port)) {
@@ -69,6 +98,10 @@ void setup() {
 
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
+
+  delay(2);
+
+  setupWebServer();
 }
 
 
