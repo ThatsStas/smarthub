@@ -1,0 +1,37 @@
+* {
+    box-sizing: border-box;
+    align-items: center;
+
+}
+
+body {
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    background-position: center center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: sans-serif;
+    margin: 0;
+    align-items: center;
+
+}
+
+.temperature, .humidity {
+    font-size: 2rem;
+    border: 1px solid black;
+    border-radius: 5px;
+    width: 500px;
+
+    margin: 1rem;
+}
+
+.quantities, .content-el {
+    text-align: center;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+
+    flex-wrap: column;
+    justify-content: center;
+}
