@@ -21,3 +21,12 @@ app.get('/get_config', function(req, res){
     res.set('Content-Type: application/json')
     res.send(content);
 });
+
+app.get('/get_sensors', function(req, res){
+    console.log("/get_sensors called");
+    var content = `{ "temperature":24.5, "humidity":45.9}`;
+
+    res.statusCode = 200;
+    res.set('Content-Type: application/json')
+    res.send(content);
+});
