@@ -1,16 +1,16 @@
 var getJSON = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
-    // xhr.responseType = 'json';
+    xhr.responseType = 'json';
     xhr.onload = function() {
       var status = xhr.status;
       if (status === 200) {
-        callback(null, xhr.response);
-      } else {
-        callback(status, xhr.response);
-      }
-    };
-    xhr.send();
+      callback(null, xhr.response);
+    } else {
+      callback(status, xhr.response);
+    }
+  };
+  xhr.send();
 };
 
 function get_data() {
@@ -27,7 +27,10 @@ function get_data() {
             document.getElementById('broker-address').value = json_data['broker-address'];
             document.getElementById('broker-user').value = json_data['broker-user'];
             document.getElementById('broker-password').value = json_data['broker-password'];
+            document.getElementById('broker-topic').value = json_data['broker-topic'];
+            
             document.getElementById('broker-update-inverval').value = json_data['broker-update-interval'];
+
         }
     });
 };
