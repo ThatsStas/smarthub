@@ -27,6 +27,7 @@ body {
 }
 
 .quantities, .content-el {
+    margin-top: 1rem;
     text-align: center;
     align-items: center;
     display: flex;
