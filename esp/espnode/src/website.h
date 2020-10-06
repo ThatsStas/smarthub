@@ -1,22 +1,111 @@
 #include <string>
+const std::string index_html = R"(
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <!-- <title>ESPNodeConfigurator</title> -->
+            <link rel="stylesheet" href="style_index.css" />
+            <script src="index.js" defer></script>
+        </head>
+    <body>
+    <h1>ESPNode </h1>
+        <div class="content">
+            <div class="temperature">
+                <div class="content-el">Temperature:</div>
+                <div class="quantities">
+                    <p id="temperature-p"></p>
+                    <p>&deg;C</p>
+                </div>
+            </div>
+            <div class="humidity">
+                <div class="content-el">Humidity:</div>
+                <div class="quantities">
+                    <p id="humidity-p"></p>
+                    <p>%</p>
+                </div>
+            </div>
+        </div>
+        
+    </body></html>
+)";
 
-const std::string website = R"(
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Countdown Timer</title>
-        <!-- <link rel="stylesheet" href="css/style.css" /> -->
-        <!-- <script src="js/script.js" defer></script> -->
-    </head>
+const std::string index_js = R"(
+    var getJSON = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    // xhr.responseType = 'json';
+    xhr.onload = function() {
+            var status = xhr.status;
+            if (status === 200) {
+                callback(null, xhr.response);
+            } else {
+                callback(status, xhr.response);
+            }
+        };
+        xhr.send(200);
+    };
 
-<body>
-<h1> Welcome to the ESP8266 </h1>
+    function get_sensors() {
+        getJSON("get_sensors", 
+        function(err, data) {
+            if (err !== null) {
+            alert('Something went wrong: ' + err);
+            } else {
+                var json_data = JSON.parse(data);
+                console.log(json_data);
+                document.getElementById('temperature-p').innerHTML = json_data["temperature"];
+                document.getElementById('humidity-p').innerHTML = json_data["humidity"];
 
-</body>
+            }
+        });
+    };
 
-</html>
+    // set_data();
+
+    setInterval(get_sensors, 5000);
+)";
+
+const std::string index_css = R"(
+    * {
+        box-sizing: border-box;
+        align-items: center;
+
+    }
+
+    body {
+        background-size: cover;
+        display: flex;
+        flex-direction: column;
+        background-position: center center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: sans-serif;
+        margin: 0;
+        align-items: center;
+
+    }
+
+    .temperature, .humidity {
+        font-size: 2rem;
+        border: 1px solid black;
+        border-radius: 5px;
+        width: 500px;
+
+        margin: 1rem;
+    }
+
+    .quantities, .content-el {
+        margin-top: 1rem;
+        text-align: center;
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+
+        flex-wrap: column;
+        justify-content: center;
+    }
 )";
 
 const std::string config_html = R"(
@@ -200,35 +289,6 @@ function get_data() {
         }
     });
 };
-
-
-// function get_data() {
-//     var request = new XMLHttpRequest();
-//     request.open('GET', 'http://127.0.0.1:8080/get_config', true);
-//     console.log("Trying to get json");
-
-//     request.onload = function() {
-//     if (request.status >= 200 && request.status < 400) {
-//         // Success!
-//         var data = JSON.parse(request.responsevalue);
-
-//         // var json_data = JSON.parse(data);
-//         console.log("Data obtained from esp: " + data[0]);
-    
-//         document.getElementById('hostname').value = data.hostname;
-//     } else {
-//         // We reached our target server, but it returned an error
-
-//     }
-
-//     request.send();
-//     };
-
-//     request.onerror = function() {
-//     // There was a connection error of some sort
-//     };
-// }
-
 get_data();
 
 )";

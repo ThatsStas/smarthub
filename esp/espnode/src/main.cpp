@@ -1,4 +1,4 @@
-
+#include <string>
 
 #include <Arduino.h>
 
@@ -36,26 +36,29 @@ void notFound(AsyncWebServerRequest *request) {
     request->send(404, "text/html", "Not found");
 }
 
-void sendInfo(AsyncWebServerRequest *request) {
-    request->send(200, "text/html", website.c_str());
 
-}
+char buffer[100];
+char* get_sensordata() {
+  char data[100];
+  memset(buffer, 0, 100);
+  snprintf(data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", dht.readTemperature(), dht.readHumidity());
 
-void configureClient(AsyncWebServerRequest *request) {
-  // request.
+  memcpy(buffer, data, 100);
+
+  return buffer;
+  
 }
 
 void setupWebServer() {
-  server.on("/", HTTP_GET, sendInfo);
-  server.on("/", HTTP_POST, configureClient);
-  s_server.on("/", HTTP_GET, sendInfo);
-  s_server.on("/", HTTP_POST, configureClient);
-  s_server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
-
   server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
   server.on("/config.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html.c_str());});
   server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
   server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
+
+  server.on("/get_sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
+  server.on("/index.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html.c_str());});
+  server.on("/index.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js.c_str());});  
+  server.on("/style_index.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css.c_str());});
 
 
 
