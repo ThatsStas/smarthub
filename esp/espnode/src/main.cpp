@@ -28,6 +28,8 @@ unsigned long previousMillis = 0;
 
 int count = 0;
 
+const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi-password\":\"mywifi-pass\", \"broker-address\":\"broker-address\", \"broker-user\":\"broker-user\", \"broker-password\":\"broker-password\", \"broker-update-interval\":1000, \"broker-topic\":\"myTopic\" }";
+
 DHT dht(5, DHT22);
 
 void notFound(AsyncWebServerRequest *request) {
@@ -48,6 +50,14 @@ void setupWebServer() {
   server.on("/", HTTP_POST, configureClient);
   s_server.on("/", HTTP_GET, sendInfo);
   s_server.on("/", HTTP_POST, configureClient);
+  s_server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
+
+  server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
+  server.on("/config.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html.c_str());});
+  server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
+  server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
+
+
 
   server.onNotFound(notFound);
   s_server.onNotFound(notFound);
