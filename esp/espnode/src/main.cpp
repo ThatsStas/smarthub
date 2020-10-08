@@ -55,10 +55,25 @@ void setupWebServer() {
   server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
   server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
 
-  server.on("/get_sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
+  server.on("/sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
+  server.on("/sensors", HTTP_POST, [&] (AsyncWebServerRequest *request) { Serial.println(request->params()); request->send(200);});
+
   server.on("/index.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html.c_str());});
   server.on("/index.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js.c_str());});  
   server.on("/style_index.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css.c_str());});
+
+
+  s_server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
+  s_server.on("/config.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html.c_str());});
+  s_server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
+  s_server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
+
+  s_server.on("/sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
+  s_server.on("/sensors", HTTP_POST, [&] (AsyncWebServerRequest *request) { Serial.println(request->params()); request->send(200);});
+
+  s_server.on("/index.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html.c_str());});
+  s_server.on("/index.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js.c_str());});  
+  s_server.on("/style_index.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css.c_str());});
 
 
 
@@ -115,6 +130,7 @@ void setup() {
     while (1);
   }
 
+  delay(1000);
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
 

@@ -1,5 +1,5 @@
 #include <string>
-const std::string index_html = R"(
+const String index_html = R"(
     <!DOCTYPE html>
     <html lang="en">
         <head>
@@ -31,7 +31,7 @@ const std::string index_html = R"(
     </body></html>
 )";
 
-const std::string index_js = R"(
+const String index_js = R"(
     var getJSON = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -48,7 +48,7 @@ const std::string index_js = R"(
     };
 
     function get_sensors() {
-        getJSON("get_sensors", 
+        getJSON("sensors", 
         function(err, data) {
             if (err !== null) {
             alert('Something went wrong: ' + err);
@@ -67,7 +67,7 @@ const std::string index_js = R"(
     setInterval(get_sensors, 5000);
 )";
 
-const std::string index_css = R"(
+const String index_css = R"(
     * {
         box-sizing: border-box;
         align-items: center;
@@ -108,7 +108,7 @@ const std::string index_css = R"(
     }
 )";
 
-const std::string config_html = R"(
+const String config_html = R"(
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -203,7 +203,7 @@ const std::string config_html = R"(
 </html>
 )";
 
-const std::string config_css = R"(
+const String config_css = R"(
 * {
     box-sizing: border-box;
     align-items: center;
@@ -252,11 +252,13 @@ span{
 
 )";
 
-const std::string config_js = R"(
+const String config_js = R"(
+
+
 var getJSON = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
-    // xhr.responseType = 'json';
+    xhr.responseType = 'json';
     xhr.onload = function() {
       var status = xhr.status;
       if (status === 200) {
@@ -274,6 +276,7 @@ function get_data() {
         if (err !== null) {
           alert('Something went wrong: ' + err);
         } else {
+            console.log(data);
             var json_data = JSON.parse(data);
             console.log(json_data);
             document.getElementById('hostname').value = json_data['hostname'];
@@ -289,6 +292,22 @@ function get_data() {
         }
     });
 };
-get_data();
 
+function send_config() {
+  console.log('clicked');
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "localhost:8080/sensors", true);
+
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send("{\"test\":\"abc\"}")
+}
+
+function setup() {
+  document.getElementById('submit').conclick = send_config;
+};
+
+
+setup();
+
+get_data();
 )";

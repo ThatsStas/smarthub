@@ -1,3 +1,5 @@
+
+
 var getJSON = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -35,32 +37,20 @@ function get_data() {
     });
 };
 
+function send_config() {
+  console.log('clicked');
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "localhost:8080", true);
 
-// function get_data() {
-//     var request = new XMLHttpRequest();
-//     request.open('GET', 'http://127.0.0.1:8080/get_config', true);
-//     console.log("Trying to get json");
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send("{\"test\":\"abc\"}")
+}
 
-//     request.onload = function() {
-//     if (request.status >= 200 && request.status < 400) {
-//         // Success!
-//         var data = JSON.parse(request.responsevalue);
+function setup() {
+  document.getElementById('submit').conclick = send_config;
+};
 
-//         // var json_data = JSON.parse(data);
-//         console.log("Data obtained from esp: " + data[0]);
-    
-//         document.getElementById('hostname').value = data.hostname;
-//     } else {
-//         // We reached our target server, but it returned an error
 
-//     }
-
-//     request.send();
-//     };
-
-//     request.onerror = function() {
-//     // There was a connection error of some sort
-//     };
-// }
+setup();
 
 get_data();
