@@ -14,77 +14,32 @@
 #include "website.h"
 
 AsyncWebServer server(80);
-AsyncWebServer s_server(443);
+DHT           dht(5, DHT22);
 
-WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
 
-const char broker[] = "192.168.0.11";
-int        port     = 1883;
-const char topic[]  = "arduino/simple";
+WiFiClient    wifiClient;
+MqttClient    mqttClient(wifiClient);
 
-const long interval = 1000;
+const char    broker[] = "192.168.0.11";
+int           port     = 1883;
+const char    topic[]  = "arduino/simple";
+
+const long    interval = 1000;
 unsigned long previousMillis = 0;
 
-int count = 0;
+unsigned long prev_exec_time = 0;
+unsigned long current_exec_time = 0;
+
+float         temp = 0.0f;
+float         humid = 0.0f; 
+char          sensor_data[100];
+
 
 const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi-password\":\"mywifi-pass\", \"broker-address\":\"broker-address\", \"broker-user\":\"broker-user\", \"broker-password\":\"broker-password\", \"broker-update-interval\":1000, \"broker-topic\":\"myTopic\" }";
 
-DHT dht(5, DHT22);
-
-void notFound(AsyncWebServerRequest *request) {
-    request->send(404, "text/html", "Not found");
-}
-
-
-char buffer[100];
-char* get_sensordata() {
-  char data[100];
-  memset(buffer, 0, 100);
-  snprintf(data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", dht.readTemperature(), dht.readHumidity());
-
-  memcpy(buffer, data, 100);
-
-  return buffer;
-  
-}
-
-void setupWebServer() {
-  server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
-  server.on("/config.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html.c_str());});
-  server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
-  server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
-
-  server.on("/sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
-  server.on("/sensors", HTTP_POST, [&] (AsyncWebServerRequest *request) { Serial.println(request->params()); request->send(200);});
-
-  server.on("/index.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html.c_str());});
-  server.on("/index.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js.c_str());});  
-  server.on("/style_index.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css.c_str());});
-
-
-  s_server.on("/get_config", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", data);});
-  s_server.on("/config.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html.c_str());});
-  s_server.on("/config.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js.c_str());});  
-  s_server.on("/style_config.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css.c_str());});
-
-  s_server.on("/sensors", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", get_sensordata());});
-  s_server.on("/sensors", HTTP_POST, [&] (AsyncWebServerRequest *request) { Serial.println(request->params()); request->send(200);});
-
-  s_server.on("/index.html", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html.c_str());});
-  s_server.on("/index.js", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js.c_str());});  
-  s_server.on("/style_index.css", HTTP_GET, [&] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css.c_str());});
-
-
-
-  server.onNotFound(notFound);
-  s_server.onNotFound(notFound);
-
-  server.begin();
-  s_server.begin();
-}
-
 void setup() {
+  snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", 0.0, 0.0);
+
   dht.begin();
   Serial.begin(9600);
   while (!Serial) {
@@ -92,8 +47,13 @@ void setup() {
   }
 
 
-
+  Serial.println();
+  Serial.println();
   Serial.println("Starting node...");
+  Serial.println();
+  Serial.println();
+
+
 
   WiFi.begin(ssid, pass);
   uint8_t status;
@@ -117,7 +77,7 @@ void setup() {
     delay(1000);
   }
 
-  Serial.print("Connected. IP [");
+  Serial.print("Connected IP [");
   Serial.print(WiFi.localIP());
   Serial.println("]");
   
@@ -134,16 +94,38 @@ void setup() {
   Serial.println("You're connected to the MQTT broker!");
   Serial.println();
 
-  delay(2);
+  server.on("/index.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html); });
 
-  setupWebServer();
+  server.on("/style_index.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css); });
+  server.on("/index.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js); });
+  server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
+
+  server.onNotFound([] (AsyncWebServerRequest *request) { request->send(404, "text/html", "Ressource not found"); });
+
+  prev_exec_time = millis();
+  current_exec_time = millis();
+
+  server.begin();
 }
 
 
 
 void loop() {
-  auto temp = dht.readTemperature();
-  auto humid = dht.readHumidity();
+
+  current_exec_time = millis();
+
+  if (current_exec_time - prev_exec_time < 5000)
+  {
+    delayMicroseconds(100000);
+    return;
+  }
+  prev_exec_time = millis();
+
+  temp = dht.readTemperature();
+  humid = dht.readHumidity();
+  snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", temp, humid);
+
+  Serial.println("Loop");
 
   Serial.print("Temperature: ");
   Serial.print(temp);
@@ -152,23 +134,15 @@ void loop() {
 
   mqttClient.poll();
 
-  unsigned long currentMillis = millis();
-  
-  if (currentMillis - previousMillis >= interval) {
-    // save the last time a message was sent
-    previousMillis = currentMillis;
+    // save the last time a message was sents
+  Serial.print("Sending message to topic: ");
+  Serial.println(topic);
 
-    Serial.print("Sending message to topic: ");
-    Serial.println(topic);
+  mqttClient.beginMessage(topic);
+  mqttClient.print("temp ");
+  mqttClient.print(temp);
+  mqttClient.endMessage();
 
-    mqttClient.beginMessage(topic);
-    mqttClient.print("temp ");
-    mqttClient.print(temp);
-    mqttClient.endMessage();
-
-    Serial.println();
-  }
-  delay(5000);
 }
 
 	// WiFi.begin("Tardis", "Thisisavery4312longpassword$#!@");

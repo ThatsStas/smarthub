@@ -1,4 +1,7 @@
-#include <string>
+#ifndef WEBSITE_H_
+#define WEBSITE_H_
+
+
 const String index_html = R"(
     <!DOCTYPE html>
     <html lang="en">
@@ -29,6 +32,8 @@ const String index_html = R"(
         </div>
         
     </body></html>
+
+    
 )";
 
 const String index_js = R"(
@@ -63,7 +68,7 @@ const String index_js = R"(
     };
 
     // set_data();
-
+    get_sensors();
     setInterval(get_sensors, 5000);
 )";
 
@@ -253,8 +258,6 @@ span{
 )";
 
 const String config_js = R"(
-
-
 var getJSON = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -311,3 +314,5 @@ setup();
 
 get_data();
 )";
+
+#endif
