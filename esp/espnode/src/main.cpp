@@ -16,6 +16,10 @@
 
 #include "credentials.h"
 #include "website.h"
+#include "data_handler.h"
+
+
+DataHandler dataHandler();
 
 AsyncWebServer server(80);
 DHT           dht(5, DHT22);
