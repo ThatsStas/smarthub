@@ -296,14 +296,14 @@ function get_data() {
 function send_config() {
   console.log('clicked');
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "localhost/config", true);
+  xhr.open("POST", "config", true);
 
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send("{\"test\":\"abc\"}")
 }
 
 function setup() {
-  document.getElementById('submit').conclick = send_config;
+  document.getElementById('submit').onclick = send_config;
 };
 
 

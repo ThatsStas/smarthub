@@ -10,6 +10,10 @@
 
 #include <ESP8266WiFi.h>
 
+#include "AsyncJson.h"
+#include "ArduinoJson.h"
+
+
 #include "credentials.h"
 #include "website.h"
 
@@ -36,6 +40,22 @@ char          sensor_data[100];
 
 
 const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi-password\":\"mywifi-pass\", \"broker-address\":\"broker-address\", \"broker-user\":\"broker-user\", \"broker-password\":\"broker-password\", \"broker-update-interval\":1000, \"broker-topic\":\"myTopic\" }";
+
+
+String return_data;
+
+void handle_post(AsyncWebServerRequest *request) {
+  Serial.println("Post");
+  for (size_t i = 0; i < request->args(); i++)
+    Serial.println(request->argName(i));
+  request->send(200, "text/html", ""); 
+}
+
+AsyncCallbackJsonWebHandler* config_handler = new AsyncCallbackJsonWebHandler("/config", [](AsyncWebServerRequest *request, JsonVariant &json) {
+  // JsonObject& jsonObj = json.as<JsonObject>();
+  Serial.print("Handler called: ");
+  Serial.println((const char*)json["test"]);
+});
 
 void setup() {
   snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", 0.0, 0.0);
@@ -105,10 +125,11 @@ void setup() {
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
 
   server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
-  server.on("/config", HTTP_POST, [] (AsyncWebServerRequest *request) { request->send(200, "application/json", ""); });
+  // server.on("/config", HTTP_POST, handle_post);
+  server.addHandler(config_handler);
 
 
-  server.onNotFound([] (AsyncWebServerRequest *request) { request->send(404, "text/html", "Ressource not found"); });
+  server.onNotFound([] (AsyncWebServerRequest *request) { });
 
   prev_exec_time = millis();
   current_exec_time = millis();
@@ -150,6 +171,8 @@ void loop() {
   mqttClient.print("temp ");
   mqttClient.print(temp);
   mqttClient.endMessage();
+
+  Serial.println(return_data);
 
 }
 
