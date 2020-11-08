@@ -144,10 +144,8 @@ const String config_html = R"(
         id="wifi-ssid"
         placeholder="SSID"
         autocomplete="off"
-        
-    />
-
-    <span> WiFI Password: </span>
+        />
+    <span> WiFi Pass: </span>
     <input
         class="wifi-password"
         type="password"
@@ -179,10 +177,8 @@ const String config_html = R"(
         class="broker-password"
         type="password"
         id="broker-password"
-        placeholder="***"
-        autocomplete="off"
+        placeholder="***"index_css
     />
-
     <span> Broker Topic: </span>
     <input
         class="broker-topic"
@@ -274,13 +270,14 @@ var getJSON = function(url, callback) {
 };
 
 function get_data() {
-    getJSON("get_config", 
+    getJSON("config", 
     function(err, data) {
         if (err !== null) {
           alert('Something went wrong: ' + err);
         } else {
             console.log(data);
-            var json_data = JSON.parse(data);
+            // var json_data = JSON.parse(data);
+            var json_data = data;
             console.log(json_data);
             document.getElementById('hostname').value = json_data['hostname'];
             document.getElementById('wifi-ssid').value = json_data['wifi-ssid'];
@@ -299,7 +296,7 @@ function get_data() {
 function send_config() {
   console.log('clicked');
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "localhost:8080/sensors", true);
+  xhr.open("POST", "localhost/config", true);
 
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send("{\"test\":\"abc\"}")

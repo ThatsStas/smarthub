@@ -95,10 +95,18 @@ void setup() {
   Serial.println();
 
   server.on("/index.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html); });
-
   server.on("/style_index.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css); });
   server.on("/index.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js); });
+
+  server.on("/config.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html); });
+  server.on("/style_config.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css); });
+  server.on("/config.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js); });
+
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
+
+  server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
+  server.on("/config", HTTP_POST, [] (AsyncWebServerRequest *request) { request->send(200, "application/json", ""); });
+
 
   server.onNotFound([] (AsyncWebServerRequest *request) { request->send(404, "text/html", "Ressource not found"); });
 
