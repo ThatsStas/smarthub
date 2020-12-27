@@ -5,6 +5,24 @@
 DataHandler::DataHandler() {
     EEPROM.begin(MAX_EEPROM_SIZE);
     EEPROM.get(BASE_ADDRESS, configurationData);
+
+    // first boot after flash: the EEPROM data is not initialized with sane values yet
+    if (configurationData.magic != MAGIC)
+    {
+        Serial.println("DataHandler: INIT");
+        hostname("");
+        wifiSSID("");
+        wifiPass("");
+        brokerAddress("");
+        brokerUser("");
+        brokerPassword("");
+        brokerTopic("");
+        updateInterval(1);
+        configurationData.magic = MAGIC;
+
+        writeData();
+    }
+
 }
 
 DataHandler::~DataHandler() {
@@ -51,9 +69,10 @@ char* DataHandler::updateData(char* originalValue, const char* updateValue)
     if (updateValue != nullptr && strlen(updateValue) < MAX_SIZE) 
     {
         Serial.println("DD: Updating value");
+        memset(originalValue, 0, MAX_SIZE);
         memcpy(originalValue, updateValue, strlen(updateValue));
     }
-    else 
+    else
     {   
         Serial.println("EE: Data is too large. Returning old data.");
     }

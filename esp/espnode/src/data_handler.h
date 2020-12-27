@@ -22,6 +22,8 @@ private:
     static const uint16 MAX_SIZE = 64;
     static const uint16 BASE_ADDRESS = 0;
     static const uint16 MAX_EEPROM_SIZE = 512;
+    static const uint32 MAGIC = 0xdead;
+
 
     struct dataStructure {
         char hostname[MAX_SIZE];
@@ -32,6 +34,7 @@ private:
         char brokerPassword[MAX_SIZE];
         char brokerTopic[MAX_SIZE];
         uint32 updateInterval;
+        uint32 magic;
     } configurationData;
 
     char* updateData(char* originalValue, const char* updateValue);

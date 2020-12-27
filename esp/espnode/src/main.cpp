@@ -19,8 +19,7 @@
 #include "data_handler.h"
 
 
-DataHandler dataHandler();
-
+DataHandler *dataHandler;
 AsyncWebServer server(80);
 DHT           dht(5, DHT22);
 
@@ -62,10 +61,13 @@ AsyncCallbackJsonWebHandler* config_handler = new AsyncCallbackJsonWebHandler("/
 });
 
 void setup() {
+  Serial.begin(9600);
+
+  dataHandler = new DataHandler();
+
   snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", 0.0, 0.0);
 
   dht.begin();
-  Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -129,6 +131,10 @@ void setup() {
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
 
   server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
+  
+  server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
+  // server.on("/test", HTTP_POST, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
+  
   // server.on("/config", HTTP_POST, handle_post);
   server.addHandler(config_handler);
 
@@ -144,7 +150,6 @@ void setup() {
 
 
 void loop() {
-
   current_exec_time = millis();
 
   if (current_exec_time - prev_exec_time < 5000)
@@ -174,9 +179,9 @@ void loop() {
   mqttClient.beginMessage(topic);
   mqttClient.print("temp ");
   mqttClient.print(temp);
+  mqttClient.print("humid ");
+  mqttClient.print(humid);
   mqttClient.endMessage();
-
-  Serial.println(return_data);
 
 }
 
