@@ -47,18 +47,25 @@ const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi
 
 String return_data;
 
-void handle_post(AsyncWebServerRequest *request) {
-  Serial.println("Post");
-  for (size_t i = 0; i < request->args(); i++)
-    Serial.println(request->argName(i));
-  request->send(200, "text/html", ""); 
-}
 
-AsyncCallbackJsonWebHandler* config_handler = new AsyncCallbackJsonWebHandler("/config", [](AsyncWebServerRequest *request, JsonVariant &json) {
+AsyncCallbackJsonWebHandler* config_handler = new AsyncCallbackJsonWebHandler("/config1", [](AsyncWebServerRequest *request, JsonVariant &json) {
   // JsonObject& jsonObj = json.as<JsonObject>();
   Serial.print("Handler called: ");
   Serial.println((const char*)json["test"]);
 });
+
+
+void test_post(AsyncWebServerRequest *request) { 
+  Serial.print("request->args()"); Serial.println(request->args());
+  for (auto i = 0; i < request->args(); i++)
+  {
+    char tmp[100];
+    snprintf(tmp, 100, "arg[%d]: name: %s\t Value: %s", i ,request->argName(i).c_str(),  request->arg(i).c_str());
+    Serial.println(tmp);
+  }
+
+  request->send(200, "text/plain", "TEST POST"); 
+}
 
 void setup() {
   Serial.begin(9600);
@@ -90,8 +97,6 @@ void setup() {
         case STATION_NO_AP_FOUND:
             Serial.println("STATION_NO_AP_FOUND");
         case STATION_CONNECT_FAIL:
-            Serial.println("STATION_CONNECT_FAIL");
-        case STATION_WRONG_PASSWORD:
             Serial.println("STATION_WRONG_PASSWORD");
         case STATION_IDLE:
             Serial.println("STATION_IDLE");
@@ -131,13 +136,11 @@ void setup() {
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
 
   server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
-  
-  server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
-  // server.on("/test", HTTP_POST, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
-  
-  // server.on("/config", HTTP_POST, handle_post);
-  server.addHandler(config_handler);
 
+  server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
+  server.on("/test", HTTP_POST, test_post);
+  
+  server.addHandler(config_handler);
 
   server.onNotFound([] (AsyncWebServerRequest *request) { });
 
