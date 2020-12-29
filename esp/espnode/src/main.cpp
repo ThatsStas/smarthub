@@ -41,14 +41,27 @@ float         humid = 0.0f;
 char          sensor_data[100];
 
 
-const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi-password\":\"mywifi-pass\", \"broker-address\":\"broker-address\", \"broker-user\":\"broker-user\", \"broker-password\":\"broker-password\", \"broker-update-interval\":1000, \"broker-topic\":\"myTopic\" }";
-
 
 String return_data;
 
 
+bool handleTest(AsyncWebServerRequest *request, uint8_t *datas) {
+  Serial.printf("[REQUEST]\t%s\r\n", (const char*)datas);
+  Serial.print("request->args() : "); Serial.println(request->args());
+  for (auto i = 0; i < request->args(); i++)
+  {
+    char tmp[100];
+    snprintf(tmp, 100, "arg[%d]: name: %s\t Value: %s", i ,request->argName(i).c_str(),  request->arg(i).c_str());
+
+  }
+
+  return 1;
+}
+
 void test_post(AsyncWebServerRequest *request) { 
-  Serial.print("request->args()"); Serial.println(request->args());
+  Serial.print("request->contentLength() : "); Serial.println(request->contentLength());
+
+  Serial.print("request->args() : "); Serial.println(request->args());
   for (auto i = 0; i < request->args(); i++)
   {
     char tmp[100];
@@ -56,21 +69,12 @@ void test_post(AsyncWebServerRequest *request) {
 
     
     Serial.println("=== JSON ===");
-    StaticJsonDocument<256> buf;
+    StaticJsonDocument<1024> buf;
     deserializeJson(buf, request->arg(i).c_str());
 
     JsonObject obj = buf.as<JsonObject>();
-    for (JsonPair p : obj) {
-      const char* key = p.key().c_str();
-      JsonVariant value = p.value();
-  
-      Serial.print("Key: "); Serial.println((const char*)buf[key]);
-      Serial.print("Value: "); Serial.println(value.as<char*>());
-    }
-   
-    Serial.println(tmp);
+    dataHandler->setData(obj);
   }
-
   request->send(200, "text/plain", "TEST POST"); 
 }
 
@@ -142,11 +146,19 @@ void setup() {
 
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
 
-  server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", data); });
+  server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->getSerializedJson()); });
 
   server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
-  server.on("/test", HTTP_POST, test_post);
-  
+  // server.on("/config", HTTP_POST, test_post);
+
+  server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+    delay(1000);
+    if (request->url() == "/config") {
+      if (!handleTest(request, data)) request->send(200, "text/plain", "false");
+      request->send(200, "text/plain", "true");
+    }
+  });
+
 
   server.onNotFound([] (AsyncWebServerRequest *request) { });
 

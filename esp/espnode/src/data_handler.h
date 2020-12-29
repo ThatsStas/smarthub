@@ -2,6 +2,7 @@
 #define DATA_HANDLER_H
 
 #include <Arduino.h>
+#include "ArduinoJson.h"
 
 class DataHandler {
 public:
@@ -17,6 +18,8 @@ public:
     char* brokerTopic(const char* brokerTopic = nullptr);
     uint32 updateInterval(const uint32 updateInterval = 0);
 
+    bool setData(JsonObject& obj);
+    char* getSerializedJson();    
 
 private:
     static const uint16 MAX_SIZE = 64;
@@ -39,6 +42,8 @@ private:
 
     char* updateData(char* originalValue, const char* updateValue);
     bool writeData();
+    JsonObject getData();
+
 };
 
 #endif

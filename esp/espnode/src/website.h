@@ -177,7 +177,7 @@ const String config_html = R"(
         class="broker-password"
         type="password"
         id="broker-password"
-        placeholder="***"index_css
+        placeholder="***"
     />
     <span> Broker Topic: </span>
     <input
@@ -190,9 +190,9 @@ const String config_html = R"(
         
     <span> Update Interval: </span>
     <input
-        class="broker-update-inverval"
+        class="broker-update-interval"
         type="number"
-        id="broker-update-inverval"
+        id="broker-update-interval"
         placeholder="Interval"
         autocomplete="off"
     />
@@ -270,6 +270,7 @@ var getJSON = function(url, callback) {
 };
 
 function get_data() {
+    console.log("Obtaining data from backend");
     getJSON("config", 
     function(err, data) {
         if (err !== null) {
@@ -287,19 +288,38 @@ function get_data() {
             document.getElementById('broker-password').value = json_data['broker-password'];
             document.getElementById('broker-topic').value = json_data['broker-topic'];
             
-            document.getElementById('broker-update-inverval').value = json_data['broker-update-interval'];
+            document.getElementById('broker-update-interval').value = json_data['broker-update-interval'];
 
         }
     });
 };
 
 function send_config() {
+
+
+
+    var json = `{
+        hostname : ${document.getElementById('hostname').value},
+        wifi-ssid : ${document.getElementById('wifi-ssid').value},
+        wifi-password : ${document.getElementById('wifi-password').value},
+        broker-address : ${document.getElementById('broker-address').value},
+        broker-user : ${document.getElementById('broker-user').value},
+        broker-password : ${document.getElementById('broker-password').value},
+        broker-topic : ${document.getElementById('broker-topic').value},
+        broker-update-interval : ${document.getElementById('broker-update-interval').value}
+    }`;
+
   console.log('clicked');
+  
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "config", true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.status = 200;
 
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send("{\"test\":\"abc\"}")
+  console.log(document.getElementById('hostname').value);
+  var resp = JSON.stringify(json);
+  console.log(resp);
+  xhr.send(resp);
 }
 
 function setup() {

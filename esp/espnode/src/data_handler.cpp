@@ -74,7 +74,7 @@ char* DataHandler::updateData(char* originalValue, const char* updateValue)
     }
     else
     {   
-        Serial.println("EE: Data is too large. Returning old data.");
+        Serial.println("WW: Returning old data.");
     }
     return originalValue;
 }
@@ -88,4 +88,65 @@ uint32 DataHandler::updateInterval(const uint32 updateInterval) {
 bool DataHandler::writeData() {
     EEPROM.put(BASE_ADDRESS, configurationData);
     return EEPROM.commit();
+}
+
+bool DataHandler::setData(JsonObject& obj)
+{
+    for (JsonPair p: obj)
+    {
+        auto key = p.key().c_str();
+        JsonVariant value = p.value();
+
+        if(strcmp(key, "hostname"))
+            hostname(value.as<const char*>());
+        if(strcmp(key, "wifi-ssid"))
+            wifiSSID(value.as<const char*>());
+        if(strcmp(key, "wifi-password"))
+            wifiPass(value.as<const char*>());
+        if(strcmp(key, "broker-address"))
+            brokerAddress(value.as<const char*>());
+        if(strcmp(key, "broker-user"))
+            brokerUser(value.as<const char*>());
+        if(strcmp(key, "broker-password"))
+            brokerPassword(value.as<const char*>());
+        if(strcmp(key, "broker-topic"))
+            brokerTopic(value.as<const char*>());
+        if(strcmp(key, "broker-update-interval"))
+            updateInterval(value.as<uint32>());
+        else
+        {
+            Serial.print("EE: Unknown key: "); Serial.println(key);
+            return false;
+        }
+    }
+
+    // return writeData();
+    return true;
+}
+
+JsonObject DataHandler::getData() 
+{
+    StaticJsonDocument<1024> buf;
+    buf["hostname"] = hostname();
+    buf["wifi-ssid"] = wifiSSID();
+    buf["wifi-password"] = wifiPass();
+    buf["broker-address"] = brokerAddress();
+    buf["broker-user"] = brokerUser();
+    buf["broker-password"] = brokerPassword();
+    buf["broker-topic"] = brokerTopic();
+    buf["broker-update-interval"] = updateInterval();
+    return buf.as<JsonObject>();
+}
+
+char* DataHandler::getSerializedJson() {
+    auto obj = getData();
+    
+    char data[1024];
+    
+    serializeJson(obj, data);
+
+    Serial.println("=== Serialized: ");
+    Serial.println(data);
+
+    return "";
 }
