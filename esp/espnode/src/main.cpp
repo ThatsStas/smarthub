@@ -10,7 +10,6 @@
 
 #include <ESP8266WiFi.h>
 
-#include "AsyncJson.h"
 #include "ArduinoJson.h"
 
 
@@ -48,19 +47,27 @@ const char* data = "{ \"hostname\":\"esphost\", \"wifi-ssid\":\"mySSID\", \"wifi
 String return_data;
 
 
-AsyncCallbackJsonWebHandler* config_handler = new AsyncCallbackJsonWebHandler("/config1", [](AsyncWebServerRequest *request, JsonVariant &json) {
-  // JsonObject& jsonObj = json.as<JsonObject>();
-  Serial.print("Handler called: ");
-  Serial.println((const char*)json["test"]);
-});
-
-
 void test_post(AsyncWebServerRequest *request) { 
   Serial.print("request->args()"); Serial.println(request->args());
   for (auto i = 0; i < request->args(); i++)
   {
     char tmp[100];
     snprintf(tmp, 100, "arg[%d]: name: %s\t Value: %s", i ,request->argName(i).c_str(),  request->arg(i).c_str());
+
+    
+    Serial.println("=== JSON ===");
+    StaticJsonDocument<256> buf;
+    deserializeJson(buf, request->arg(i).c_str());
+
+    JsonObject obj = buf.as<JsonObject>();
+    for (JsonPair p : obj) {
+      const char* key = p.key().c_str();
+      JsonVariant value = p.value();
+  
+      Serial.print("Key: "); Serial.println((const char*)buf[key]);
+      Serial.print("Value: "); Serial.println(value.as<char*>());
+    }
+   
     Serial.println(tmp);
   }
 
@@ -140,7 +147,6 @@ void setup() {
   server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
   server.on("/test", HTTP_POST, test_post);
   
-  server.addHandler(config_handler);
 
   server.onNotFound([] (AsyncWebServerRequest *request) { });
 
