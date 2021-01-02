@@ -1,5 +1,3 @@
-#include <string>
-
 #include <Arduino.h>
 
 #include "DHT.h"
@@ -29,7 +27,6 @@ MqttClient    mqttClient(wifiClient);
 const int     MAX_RETRY = 10;
 bool          isConnected = false;
 
-// const char    broker[] = "192.168.0.11";
 int           port     = 1883;
 char          *topic;
 
@@ -120,7 +117,7 @@ void setup() {
   
   if(isConnected)
   {
-    mqttClient.setUsernamePassword(MQTTUSER, MQTTPASS);
+    mqttClient.setUsernamePassword(dataHandler->brokerUser(), dataHandler->brokerPassword());
     if (!mqttClient.connect(dataHandler->brokerAddress(), port)) {
       Serial.print("MQTT connection failed! Error code = ");
       Serial.println(mqttClient.connectError());
@@ -136,19 +133,27 @@ void setup() {
 
   
   server.on("/index.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html); });
+
+
   server.on("/style_index.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css); });
+
+
   server.on("/index.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js); });
 
+
   server.on("/config.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", config_html); });
+
+
   server.on("/style_config.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", config_css); });
+
+
   server.on("/config.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", config_js); });
+
 
   server.on("/sensors", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", sensor_data); });
 
-  server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->getSerializedJson()); });
 
-  server.on("/test", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->hostname()); });
-  // server.on("/config", HTTP_POST, test_post);
+  server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/plain", dataHandler->getSerializedJson()); });
 
   server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
 
@@ -209,30 +214,32 @@ void setup() {
 
 void loop() {
 
-
   if (!isConnected)
+  {
+    delayMicroseconds(1000);
     return;
+  }
+
+
   current_exec_time = millis();
 
   if (current_exec_time - prev_exec_time < updateInterval)
   {
-    delayMicroseconds(1000000);
+    delayMicroseconds(10000);
     return;
   }
   prev_exec_time = millis();
 
   temp = dht.readTemperature();
   humid = dht.readHumidity();
-  snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", temp, humid);
+  snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", temp, humid);  
 
-  
+  Serial.println("Loop");
 
-  // Serial.println("Loop");
-
-  // Serial.print("Temperature: ");
-  // Serial.print(temp);
-  // Serial.print("\tHumidity: ");
-  // Serial.println(humid);
+  Serial.print("Temperature: ");
+  Serial.print(temp);
+  Serial.print("\tHumidity: ");
+  Serial.println(humid);
 
   mqttClient.poll();
 
@@ -248,5 +255,3 @@ void loop() {
   mqttClient.endMessage();
 
 }
-
-	// WiFi.begin("Tardis", "Thisisavery4312longpassword$#!@");
