@@ -68,7 +68,7 @@ char* DataHandler::updateData(char* originalValue, const char* updateValue)
 {
     if (updateValue != nullptr && strlen(updateValue) < MAX_SIZE) 
     {
-        Serial.println("DD: Updating value");
+        Serial.print("DD: Updating value: "); Serial.println(updateValue);
         memset(originalValue, 0, MAX_SIZE);
         memcpy(originalValue, updateValue, strlen(updateValue));
     }
@@ -97,21 +97,25 @@ bool DataHandler::setData(JsonObject& obj)
         auto key = p.key().c_str();
         JsonVariant value = p.value();
 
-        if(strcmp(key, "hostname"))
+
+        Serial.print("Key: "); Serial.println(key);
+        Serial.print("Value: "); Serial.println(value.as<const char*>());
+
+        if(!strcmp(key, "hostname"))
             hostname(value.as<const char*>());
-        if(strcmp(key, "wifi-ssid"))
+        else if(!strcmp(key, "wifi-ssid"))
             wifiSSID(value.as<const char*>());
-        if(strcmp(key, "wifi-password"))
+        else if(!strcmp(key, "wifi-password"))
             wifiPass(value.as<const char*>());
-        if(strcmp(key, "broker-address"))
+        else if(!strcmp(key, "broker-address"))
             brokerAddress(value.as<const char*>());
-        if(strcmp(key, "broker-user"))
+        else if(!strcmp(key, "broker-user"))
             brokerUser(value.as<const char*>());
-        if(strcmp(key, "broker-password"))
+        else if(!strcmp(key, "broker-password"))
             brokerPassword(value.as<const char*>());
-        if(strcmp(key, "broker-topic"))
+        else if(!strcmp(key, "broker-topic"))
             brokerTopic(value.as<const char*>());
-        if(strcmp(key, "broker-update-interval"))
+        else if(!strcmp(key, "broker-update-interval"))
             updateInterval(value.as<uint32>());
         else
         {
@@ -120,8 +124,7 @@ bool DataHandler::setData(JsonObject& obj)
         }
     }
 
-    // return writeData();
-    return true;
+    return writeData();
 }
 
 JsonObject DataHandler::getData() 
@@ -141,12 +144,12 @@ JsonObject DataHandler::getData()
 char* DataHandler::getSerializedJson() {
     auto obj = getData();
     
-    char data[1024];
+    static char data[1024];
     
     serializeJson(obj, data);
 
     Serial.println("=== Serialized: ");
     Serial.println(data);
 
-    return "";
+    return data;
 }

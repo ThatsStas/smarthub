@@ -26,11 +26,14 @@ DHT           dht(5, DHT22);
 WiFiClient    wifiClient;
 MqttClient    mqttClient(wifiClient);
 
-const char    broker[] = "192.168.0.11";
-int           port     = 1883;
-const char    topic[]  = "arduino/simple";
+const int     MAX_RETRY = 10;
+bool          isConnected = false;
 
-const long    interval = 1000;
+// const char    broker[] = "192.168.0.11";
+int           port     = 1883;
+char          *topic;
+
+uint32        updateInterval = 1000;
 unsigned long previousMillis = 0;
 
 unsigned long prev_exec_time = 0;
@@ -41,47 +44,16 @@ float         humid = 0.0f;
 char          sensor_data[100];
 
 
+IPAddress local_IP(192,168,0,1);
+IPAddress gateway(192,168,0,254);
+IPAddress subnet(255,255,255,0);
 
-String return_data;
-
-
-bool handleTest(AsyncWebServerRequest *request, uint8_t *datas) {
-  Serial.printf("[REQUEST]\t%s\r\n", (const char*)datas);
-  Serial.print("request->args() : "); Serial.println(request->args());
-  for (auto i = 0; i < request->args(); i++)
-  {
-    char tmp[100];
-    snprintf(tmp, 100, "arg[%d]: name: %s\t Value: %s", i ,request->argName(i).c_str(),  request->arg(i).c_str());
-
-  }
-
-  return 1;
-}
-
-void test_post(AsyncWebServerRequest *request) { 
-  Serial.print("request->contentLength() : "); Serial.println(request->contentLength());
-
-  Serial.print("request->args() : "); Serial.println(request->args());
-  for (auto i = 0; i < request->args(); i++)
-  {
-    char tmp[100];
-    snprintf(tmp, 100, "arg[%d]: name: %s\t Value: %s", i ,request->argName(i).c_str(),  request->arg(i).c_str());
-
-    
-    Serial.println("=== JSON ===");
-    StaticJsonDocument<1024> buf;
-    deserializeJson(buf, request->arg(i).c_str());
-
-    JsonObject obj = buf.as<JsonObject>();
-    dataHandler->setData(obj);
-  }
-  request->send(200, "text/plain", "TEST POST"); 
-}
 
 void setup() {
   Serial.begin(9600);
 
   dataHandler = new DataHandler();
+  topic = dataHandler->brokerTopic();
 
   snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", 0.0, 0.0);
 
@@ -98,44 +70,71 @@ void setup() {
   Serial.println();
 
 
+  int retryCounter = 0;
+  WiFi.begin(dataHandler->wifiSSID(), dataHandler->wifiPass());
 
-  WiFi.begin(ssid, pass);
   uint8_t status;
   while ((status = WiFi.status()) != WL_CONNECTED) {
         switch(status) {
         case STATION_GOT_IP:
-            Serial.println("STATION_GOT_IP");
+            Serial.println("STATION_GOT_IP"); 
+            break;
         case STATION_NO_AP_FOUND:
-            Serial.println("STATION_NO_AP_FOUND");
+            Serial.println("STATION_NO_AP_FOUND"); break;
         case STATION_CONNECT_FAIL:
-            Serial.println("STATION_WRONG_PASSWORD");
+            Serial.println("STATION_WRONG_PASSWORD"); break;
         case STATION_IDLE:
-            Serial.println("STATION_IDLE");
+            Serial.println("STATION_IDLE"); break;
         default:
-            Serial.println("DISCONNECTED");
+            Serial.println("DISCONNECTED"); break;
     }
-    
+
+    if (retryCounter >= MAX_RETRY)
+      break;
+
+    retryCounter++;
     Serial.print(".");
     delay(1000);
   }
 
+  if (retryCounter >= MAX_RETRY)
+  {
+    Serial.print("Setting soft-AP configuration ... ");
+    Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
+
+    Serial.print("Setting up Soft AP ... ");
+    Serial.println(WiFi.softAP("ESP_NODE_WiFi", "password", 3, 0, 2) ? "Ready" : "Failed");
+    Serial.print("Setup complete: \n\tSSID: ESP_NODE_WIFI\n\tpassword: password\n\tIP: "); Serial.println(WiFi.softAPIP());
+    // WiFi.begin();
+  }
+  else
+  {
+    updateInterval = dataHandler->updateInterval();
+    isConnected = true;
+  }
+  
+  
   Serial.print("Connected IP [");
   Serial.print(WiFi.localIP());
   Serial.println("]");
   
+  if(isConnected)
+  {
+    mqttClient.setUsernamePassword(MQTTUSER, MQTTPASS);
+    if (!mqttClient.connect(dataHandler->brokerAddress(), port)) {
+      Serial.print("MQTT connection failed! Error code = ");
+      Serial.println(mqttClient.connectError());
 
-  mqttClient.setUsernamePassword(MQTTUSER, MQTTPASS);
-  if (!mqttClient.connect(broker, port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
+      while (1);
+    }
+    delay(1000);
+    Serial.println("You're connected to the MQTT broker!");
+    Serial.println();
 
-    while (1);
   }
+  
 
-  delay(1000);
-  Serial.println("You're connected to the MQTT broker!");
-  Serial.println();
-
+  
   server.on("/index.html", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/html", index_html); });
   server.on("/style_index.css", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/css", index_css); });
   server.on("/index.js", HTTP_GET, [] (AsyncWebServerRequest *request) { request->send(200, "text/jscript", index_js); });
@@ -152,11 +151,50 @@ void setup() {
   // server.on("/config", HTTP_POST, test_post);
 
   server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
-    delay(1000);
-    if (request->url() == "/config") {
-      if (!handleTest(request, data)) request->send(200, "text/plain", "false");
-      request->send(200, "text/plain", "true");
+
+    Serial.println("=======================");
+    Serial.println("=======================");
+    Serial.print("Len: "); Serial.println(len);
+    Serial.print("Index: "); Serial.println(index);
+    Serial.print("Total: "); Serial.println(total);
+    Serial.print("Data: "); Serial.println((char*)data);
+
+    static char* rawJson = nullptr;
+    if (index == 0)
+    {
+      if (rawJson != nullptr)
+        delete rawJson;
+
+      rawJson = (char*) malloc(total * sizeof(char));
     }
+
+    // copy first chunk if data is not completely transmitted
+    if (index == 0 && len != total)
+    {
+      memcpy(rawJson, data, len);
+      return;
+    }
+    memcpy(rawJson + index, data, len);
+
+    // Remove escaped \" and first and last " from the json string coming from the frontend
+    String s = rawJson; 
+    s.replace("\\\"", "\"");
+    s = s.substring(1, s.length() - 1);
+  
+    memcpy(rawJson, s.c_str(), s.length());
+
+    StaticJsonDocument<1024> buf;
+    deserializeJson(buf, rawJson);
+
+
+    Serial.print("Raw JSON: "); Serial.println(rawJson);
+    Serial.print("Json buffer: "); Serial.println(buf.data().asString());
+
+    JsonObject obj = buf.as<JsonObject>();
+    Serial.print("Setting data with object size: "); Serial.println(obj.size()); 
+
+    dataHandler->setData(obj);
+
   });
 
 
@@ -169,13 +207,16 @@ void setup() {
 }
 
 
-
 void loop() {
+
+
+  if (!isConnected)
+    return;
   current_exec_time = millis();
 
-  if (current_exec_time - prev_exec_time < 5000)
+  if (current_exec_time - prev_exec_time < updateInterval)
   {
-    delayMicroseconds(100000);
+    delayMicroseconds(1000000);
     return;
   }
   prev_exec_time = millis();
@@ -184,12 +225,14 @@ void loop() {
   humid = dht.readHumidity();
   snprintf(sensor_data, 100, "{\"temperature\":\"%.2f\",\"humidity\":\"%.2f\"}", temp, humid);
 
-  Serial.println("Loop");
+  
 
-  Serial.print("Temperature: ");
-  Serial.print(temp);
-  Serial.print("\tHumidity: ");
-  Serial.println(humid);
+  // Serial.println("Loop");
+
+  // Serial.print("Temperature: ");
+  // Serial.print(temp);
+  // Serial.print("\tHumidity: ");
+  // Serial.println(humid);
 
   mqttClient.poll();
 

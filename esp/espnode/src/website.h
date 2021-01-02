@@ -271,7 +271,7 @@ var getJSON = function(url, callback) {
 
 function get_data() {
     console.log("Obtaining data from backend");
-    getJSON("config", 
+    getJSON("/config", 
     function(err, data) {
         if (err !== null) {
           alert('Something went wrong: ' + err);
@@ -298,22 +298,13 @@ function send_config() {
 
 
 
-    var json = `{
-        hostname : ${document.getElementById('hostname').value},
-        wifi-ssid : ${document.getElementById('wifi-ssid').value},
-        wifi-password : ${document.getElementById('wifi-password').value},
-        broker-address : ${document.getElementById('broker-address').value},
-        broker-user : ${document.getElementById('broker-user').value},
-        broker-password : ${document.getElementById('broker-password').value},
-        broker-topic : ${document.getElementById('broker-topic').value},
-        broker-update-interval : ${document.getElementById('broker-update-interval').value}
-    }`;
+    var json = String.raw`{ "hostname" : "${document.getElementById('hostname').value}", "wifi-ssid" : "${document.getElementById('wifi-ssid').value}", "wifi-password" : "${document.getElementById('wifi-password').value}", "broker-address" : "${document.getElementById('broker-address').value}", "broker-user" : "${document.getElementById('broker-user').value}", "broker-password" : "${document.getElementById('broker-password').value}", "broker-topic" : "${document.getElementById('broker-topic').value}", "broker-update-interval" : "${document.getElementById('broker-update-interval').value}" }`;
 
   console.log('clicked');
   
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "config", true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.status = 200;
 
   console.log(document.getElementById('hostname').value);
