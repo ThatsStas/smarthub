@@ -75,14 +75,14 @@ EFFECTIVE_UID=$(id -u)
 EFFECTIVE_GUID=$(id -g)
 
 [[ "$FOLDER_OWNER" != "$EFFECTIVE_UID" ]] && { sudo chown -R $EFFECTIVE_UID:$EFFECTIVE_GUID $DOCKER_PATH/nodered; }
-docker run --restart unless-stopped -d --group-add dialout -e TZ=Europe/Berlin -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red:1.1.3
+docker run --restart unless-stopped -d --group-add dialout -e TZ=Europe/Berlin -p 4443:443 -p 1880:1880 -v $DOCKER_PATH/nodered:/data --name nodered nodered/node-red:1.1.3
 
 if [[ $? != 0 ]]; then
     docker restart nodered
     
 fi
 
-docker run --restart unless-stopped -d -p 8086:8086 -p 2003:2003 -e INFLUXDB_ADMIN_USER=admin -e INFLUXDB_ADMIN_PASSWORD=mypassword -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb:1.8.2
+docker run --restart unless-stopped -d -p 8083:8083 -p 8086:8086 -p 2003:2003 -e INFLUXDB_ADMIN_USER=admin -e INFLUXDB_ADMIN_PASSWORD=mypassword -e INFLUXDB_GRAPHITE_ENABLED=true -v $DOCKER_PATH/influx:/var/lib/influxdb --name=influxdb influxdb:1.8.2
 
 [[ ! -f $DOCKER_PATH/grafana/grafana.ini ]] && touch $DOCKER_PATH/grafana/grafana.ini
 
