@@ -55,17 +55,10 @@ DOCKER_PATH=$(pwd)
 #}
 #
 #
-#setup_mqtt
-##docker run -d --restart unless-stopped -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6
-#
-#if [[ $? != 0 ]]; then
-#    docker restart mqtt
-#    
-#fi
-#
 
+ALL_CONTAINER="grafana nodered influxdb mqtt"
 
-[[ $# > 0 ]] && { [[ $1 == "stop" ]] && echo "Stopping all containers"; docker stop grafana nodered influxdb; docker rm grafana nodered influxdb; exit 1; }
+[[ $# > 0 ]] && { [[ $1 == "stop" ]] && echo "Stopping all containers"; docker stop $ALL_CONTAINER; docker rm $ALL_CONTAINER; exit 1; }
 
 
 [[ ! -d $DOCKER_PATH/nodered ]] && mkdir -p $DOCKER_PATH/nodered
@@ -88,5 +81,9 @@ docker run --restart unless-stopped -d -p 8083:8083 -p 8086:8086 -p 2003:2003 -e
 
 
 # TODO: Remove password from environment list.
+# FIXME: sudo chmod -R 104:104 grafana required for the container
 docker run --restart unless-stopped -d -v $DOCKER_PATH/grafana/config:/etc/grafana -v $DOCKER_PATH/grafana/data:/var/lib/grafana -v $DOCKER_PATH/grafana/log:/var/log/grafana -v $DOCKER_PATH/grafana/grafana.ini:/etc/grafana/grafana.ini -p 3000:3000 --name=grafana -u 104 grafana/grafana:7.1.5
+
+#setup_mqtt
+docker run -d --restart unless-stopped -p 1883:1883 -p 9001:9001 -v $DOCKER_PATH/mqtt/:/mosquitto --name mqtt  eclipse-mosquitto:1.6
 
