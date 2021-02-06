@@ -44,7 +44,7 @@ IPAddress subnet(255, 255, 255, 0);
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   dataHandler = new DataHandler();
   topic = dataHandler->brokerTopic();
@@ -95,6 +95,8 @@ void setup()
     Serial.print(".");
     delay(1000);
   }
+  Serial.print("Retry counter: ");
+  Serial.println(retryCounter);
 
   if (retryCounter >= MAX_RETRY)
   {
@@ -102,8 +104,8 @@ void setup()
     Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
 
     Serial.print("Setting up Soft AP ... ");
-    Serial.println(WiFi.softAP("ESP_NODE_WiFi", "password", 3, 0, 2) ? "Ready" : "Failed");
-    Serial.print("Setup complete: \n\tSSID: ESP_NODE_WIFI\n\tpassword: password\n\tIP: ");
+    Serial.println(WiFi.softAP("ESP_NODE_WiFi", "Vopop=Upolu331", 3, 0, 2) ? "Ready" : "Failed");
+    Serial.print("Setup complete: \n\tSSID: ESP_NODE_WIFI\n\tpassword: Vopop=Upolu331\n\tIP: ");
     Serial.println(WiFi.softAPIP());
     // WiFi.begin();
   }
